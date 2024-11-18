@@ -15,3 +15,6 @@ Initially, our app combined an itinerary planner powered by AI with a postcard f
 **Integrated Media and Notes**: Attach photos, videos, and notes to each pin for detailed documentation.
 
 **Customizable Pathway**: Add descriptions of what went well, what you would do differently, or just share how you felt.
+
+# Instructions to Run Code
+[Coming Soon...]
