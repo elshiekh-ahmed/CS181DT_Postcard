@@ -1,0 +1,1117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Journeasy, Follow Your Path</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ol@7.4.0/ol.css">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Roboto', sans-serif;
+    }
+
+    #app-header {
+      position: fixed;
+      top: 0;
+      width: 100%;
+      text-align: center;
+      padding: 15px 0;
+      z-index: 1000;
+      background: transparent;
+      box-shadow: none;
+    }
+
+    #app-header h1 {
+      margin: 0;
+      font-size: 48px;
+      font-family: 'Dancing Script', cursive;
+      color: white;
+      text-shadow: 
+          2px 2px 0 #000,
+          -2px 2px 0 #000,
+          -2px -2px 0 #000,
+          2px -2px 0 #000,
+          0 2px 0 #000,
+          2px 0 0 #000,
+          0 -2px 0 #000,
+          -2px 0 0 #000;
+      letter-spacing: 2px;
+    }
+
+    #app-header p {
+      margin: 5px 0 0;
+      font-size: 24px;
+      font-family: 'Dancing Script', cursive;
+      color: white;
+      text-shadow: 
+          1.5px 1.5px 0 #000,
+          -1.5px 1.5px 0 #000,
+          -1.5px -1.5px 0 #000,
+          1.5px -1.5px 0 #000,
+          0 1.5px 0 #000,
+          1.5px 0 0 #000,
+          0 -1.5px 0 #000,
+          -1.5px 0 0 #000;
+      letter-spacing: 1px;
+    }
+
+    #search-container {
+      position: fixed;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 1000;
+      width: 80%;
+      max-width: 500px;
+    }
+
+    #search-input {
+      width: 100%;
+      padding: 12px 20px;
+      border: none;
+      border-radius: 25px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      font-size: 16px;
+      outline: none;
+      transition: box-shadow 0.3s ease;
+    }
+
+    #search-input:focus {
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+
+    #map {
+      width: 100%;
+      height: 100vh;
+      position: absolute;
+      top: 0;
+    }
+
+    #popup {
+      position: absolute;
+      background: white;
+      padding: 20px;
+      border: none;
+      border-radius: 8px;
+      display: none;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      max-width: 500px;
+      min-width: 300px;
+      font-size: 16px;
+      line-height: 1.6;
+      word-wrap: break-word;
+      white-space: pre-wrap;
+      margin: 10px;
+    }
+
+    #search-suggestions {
+        position: absolute;
+        bottom: 100%;
+        left: 0;
+        right: 0;
+        background: white;
+        border-radius: 8px;
+        margin-bottom: 5px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        display: none;
+        max-height: 300px;
+        overflow-y: auto;
+    }
+
+    .suggestion-item {
+        padding: 10px 20px;
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+
+    .suggestion-item:hover {
+        background-color: #f5f5f5;
+    }
+
+    .postcard-modal {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: white;
+        padding: 25px;
+        border-radius: 15px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+        z-index: 2000;
+        width: 90%;
+        max-width: 500px;
+        display: none;
+    }
+
+    .modal-backdrop {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.5);
+        z-index: 1999;
+        display: none;
+    }
+
+    .postcard-header {
+        border-bottom: 2px solid #f0f0f0;
+        margin-bottom: 20px;
+        padding-bottom: 15px;
+    }
+
+    .postcard-header h2 {
+        margin: 0;
+        color: #333;
+        font-size: 24px;
+        font-weight: 500;
+    }
+
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+    .form-group label {
+        display: block;
+        margin-bottom: 8px;
+        color: #555;
+        font-size: 14px;
+        font-weight: 500;
+    }
+
+    .form-group input[type="date"],
+    .form-group textarea {
+        width: 100%;
+        padding: 12px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        font-size: 14px;
+        box-sizing: border-box;
+        transition: border-color 0.3s ease;
+    }
+
+    .form-group textarea {
+        height: 120px;
+        resize: vertical;
+        font-family: inherit;
+    }
+
+    .form-group input[type="date"]:focus,
+    .form-group textarea:focus {
+        outline: none;
+        border-color: #4a90e2;
+    }
+
+    .button-group {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+        margin-top: 20px;
+    }
+
+    .btn {
+        padding: 10px 20px;
+        border: none;
+        border-radius: 6px;
+        font-size: 14px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .btn-cancel {
+        background: #f0f0f0;
+        color: #333;
+    }
+
+    .btn-save {
+        background: #4a90e2;
+        color: white;
+    }
+
+    .btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+
+    .btn-cancel:hover {
+        background: #e4e4e4;
+    }
+
+    .btn-save:hover {
+        background: #357abd;
+    }
+
+    .postcard-modal {
+        max-width: 600px;
+    }
+
+    .image-upload {
+        margin-bottom: 20px;
+    }
+
+    .image-preview {
+        width: 100%;
+        height: 200px;
+        border: 2px dashed #ddd;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-top: 8px;
+        overflow: hidden;
+    }
+
+    .image-preview img {
+        max-width: 100%;
+        max-height: 100%;
+        object-fit: cover;
+    }
+
+    .image-upload label {
+        display: block;
+        margin-bottom: 8px;
+        color: #555;
+        font-size: 14px;
+        font-weight: 500;
+    }
+
+    #popup {
+        max-width: 800px;
+        min-width: 600px;
+        padding: 0;
+        background: #fff9f0;
+        border: 1px solid #e0d5c5;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+        font-family: 'Dancing Script', cursive;
+    }
+
+    .postcard-content {
+        display: flex;
+        min-height: 300px;
+    }
+
+    .postcard-image {
+        flex: 1;
+        background: #fff;
+        border-right: 1px solid #e0d5c5;
+        padding: 15px;
+    }
+
+    .postcard-image img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .postcard-text {
+        flex: 1;
+        padding: 25px;
+        background: 
+            radial-gradient(circle at top left, #fff9f0 98%, transparent 100%) top left,
+            radial-gradient(circle at top right, #fff9f0 98%, transparent 100%) top right,
+            radial-gradient(circle at bottom left, #fff9f0 98%, transparent 100%) bottom left,
+            radial-gradient(circle at bottom right, #fff9f0 98%, transparent 100%) bottom right;
+        background-size: 10px 10px;
+        background-repeat: no-repeat;
+    }
+
+    .postcard-date {
+        font-size: 1.2em;
+        color: #8b4513;
+        margin-bottom: 15px;
+        border-bottom: 1px solid #e0d5c5;
+        padding-bottom: 10px;
+    }
+
+    .postcard-message {
+        font-size: 1.1em;
+        line-height: 1.6;
+        color: #5d4037;
+    }
+
+    .postcard-stamp {
+        position: absolute;
+        top: 20px;
+        right: 40px;
+        width: 50px;
+        height: 60px;
+        border: 1px solid #d4b49c;
+        background: #fff;
+        transform: rotate(5deg);
+    }
+
+    .collection-button {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: white;
+        border-radius: 50%;
+        width: 50px;
+        height: 50px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        z-index: 1000;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .collection-button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+    }
+
+    .collection-button img {
+        width: 30px;
+        height: 30px;
+    }
+
+    .collection-modal {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 4px 25px rgba(0,0,0,0.15);
+        z-index: 2001;
+        width: 90%;
+        max-width: 1200px;
+        max-height: 80vh;
+        display: none;
+        overflow: hidden;
+    }
+
+    .collection-header {
+        padding: 20px;
+        border-bottom: 1px solid #eee;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .collection-header h2 {
+        margin: 0;
+        font-size: 24px;
+        color: #333;
+    }
+
+    .close-collection {
+        background: none;
+        border: none;
+        font-size: 24px;
+        cursor: pointer;
+        color: #666;
+        padding: 5px;
+    }
+
+    .collection-content {
+        padding: 20px;
+        overflow-y: auto;
+        max-height: calc(80vh - 70px);
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 20px;
+    }
+
+    .collection-card {
+        background: #fff9f0;
+        border: 1px solid #e0d5c5;
+        border-radius: 10px;
+        overflow: hidden;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        cursor: pointer;
+    }
+
+    .collection-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+
+    .card-image {
+        width: 100%;
+        height: 200px;
+        object-fit: cover;
+    }
+
+    .card-info {
+        padding: 15px;
+    }
+
+    .card-date {
+        font-size: 0.9em;
+        color: #8b4513;
+        margin-bottom: 8px;
+    }
+
+    .card-preview {
+        font-size: 0.95em;
+        color: #5d4037;
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        line-height: 1.5;
+    }
+
+    .no-memories {
+        grid-column: 1 / -1;
+        text-align: center;
+        padding: 40px;
+        color: #666;
+        font-style: italic;
+    }
+
+    .menu-button {
+        position: fixed;
+        top: 20px;
+        left: 20px;
+        width: 40px;
+        height: 40px;
+        background: white;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        z-index: 1000;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .menu-button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+    }
+
+    .hamburger-icon {
+        width: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .hamburger-icon span {
+        display: block;
+        width: 100%;
+        height: 2px;
+        background: #333;
+        border-radius: 2px;
+        transition: transform 0.3s ease;
+    }
+
+    .instructions-modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.5);
+        display: none;
+        z-index: 2000;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .instructions-content {
+        background: white;
+        width: 90%;
+        max-width: 600px;
+        max-height: 80vh;
+        border-radius: 15px;
+        box-shadow: 0 4px 25px rgba(0,0,0,0.15);
+        overflow: hidden;
+    }
+
+    .instructions-header {
+        padding: 20px;
+        border-bottom: 1px solid #eee;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .instructions-header h2 {
+        margin: 0;
+        color: #333;
+        font-size: 24px;
+    }
+
+    .close-instructions {
+        background: none;
+        border: none;
+        font-size: 24px;
+        cursor: pointer;
+        color: #666;
+        padding: 5px;
+    }
+
+    .instructions-body {
+        padding: 20px;
+        overflow-y: auto;
+        max-height: calc(80vh - 70px);
+    }
+
+    .instructions-body section {
+        margin-bottom: 25px;
+    }
+
+    .instructions-body h3 {
+        color: #333;
+        margin-bottom: 15px;
+        font-size: 18px;
+    }
+
+    .instructions-body p {
+        color: #666;
+        line-height: 1.6;
+        margin-bottom: 15px;
+    }
+
+    .instructions-body ol {
+        color: #666;
+        line-height: 1.6;
+        padding-left: 20px;
+    }
+
+    .instructions-body li {
+        margin-bottom: 8px;
+    }
+  </style>
+</head>
+<body>
+  <header id="app-header">
+    <h1>Journeasy</h1>
+    <p>Follow Your Path</p>
+  </header>
+
+  <div id="search-container">
+    <input type="text" id="search-input" placeholder="Search for a location...">
+    <div id="search-suggestions"></div>
+  </div>
+
+  <div id="map"></div>
+  <div id="popup"></div>
+
+  <div class="modal-backdrop" id="modal-backdrop"></div>
+  <div class="postcard-modal" id="postcard-modal">
+    <div class="postcard-header">
+        <h2>Create Memory</h2>
+    </div>
+    <div class="image-upload">
+        <label for="memory-image">Upload Image</label>
+        <input type="file" id="memory-image" accept="image/*" required>
+        <div class="image-preview" id="image-preview">
+            <span>Image Preview</span>
+        </div>
+    </div>
+    <div class="form-group">
+        <label for="memory-date">Date</label>
+        <input type="date" id="memory-date" required>
+    </div>
+    <div class="form-group">
+        <label for="memory-text">Your Memory</label>
+        <textarea id="memory-text" placeholder="Write about this place..." required></textarea>
+    </div>
+    <div class="button-group">
+        <button class="btn btn-cancel" id="cancel-memory">Cancel</button>
+        <button class="btn btn-save" id="save-memory">Save Memory</button>
+    </div>
+  </div>
+
+  <div class="collection-button" id="open-collection">
+    <img src="https://cdn-icons-png.flaticon.com/512/684/684908.png" alt="View Collection">
+  </div>
+
+  <div class="collection-modal" id="collection-modal">
+    <div class="collection-header">
+        <h2>Your Memory Collection</h2>
+        <button class="close-collection" id="close-collection">&times;</button>
+    </div>
+    <div class="collection-content" id="collection-content">
+        <!-- Cards will be dynamically added here -->
+    </div>
+  </div>
+
+  <div class="menu-button" id="menu-button">
+    <div class="hamburger-icon">
+        <span></span>
+        <span></span>
+        <span></span>
+    </div>
+  </div>
+
+  <div class="instructions-modal" id="instructions-modal">
+    <div class="instructions-content">
+        <div class="instructions-header">
+            <h2>Welcome to Journeasy</h2>
+            <button class="close-instructions" id="close-instructions">&times;</button>
+        </div>
+        <div class="instructions-body">
+            <section>
+                <h3>🌟 About Journeasy</h3>
+                <p>Journeasy is an open-source platform that lets you create and share your travel memories and recommendations. Pin your favorite locations, attach photos, and write about your experiences that you can share with friends or the public.</p>
+            </section>
+            
+            <section>
+                <h3>📍 Creating Memories</h3>
+                <ol>
+                    <li>Click anywhere on the map to place a pin</li>
+                    <li>Upload a photo of your memory</li>
+                    <li>Select the date of your visit</li>
+                    <li>Write about your experience</li>
+                    <li>Click 'Save Memory' to create your postcard</li>
+                </ol>
+            </section>
+
+            <section>
+                <h3>📚 Viewing Your Collection</h3>
+                <p>Click the pin icon in the top right corner to view all your saved memories. Click on any memory card to zoom to its location on the map.</p>
+            </section>
+
+            <section>
+                <h3>🔍 Finding Places</h3>
+                <p>Use the search bar at the bottom of the screen to find specific locations. Select from the suggestions to zoom to that place.</p>
+            </section>
+        </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/ol@7.4.0/dist/ol.js"></script>
+  <script src="https://nominatim.openstreetmap.org/ui/nominatim.js"></script>
+  <script>
+    // Initialize the map
+    const map = new ol.Map({
+      target: 'map',
+      layers: [
+        new ol.layer.Tile({
+          source: new ol.source.OSM()
+        })
+      ],
+      view: new ol.View({
+        center: ol.proj.fromLonLat([-119.4179, 36.7783]), // California
+        zoom: 6
+      }),
+      controls: [] // This removes all default controls including zoom buttons
+    });
+
+    // Vector source and layer for pins
+    const vectorSource = new ol.source.Vector();
+    const vectorLayer = new ol.layer.Vector({
+      source: vectorSource
+    });
+    map.addLayer(vectorLayer);
+
+    // Styles
+    const defaultStyle = new ol.style.Style({
+      image: new ol.style.Icon({
+        anchor: [0.5, 1],
+        src: 'https://cdn-icons-png.flaticon.com/512/684/684908.png',
+        scale: 0.05,
+        color: 'black' // Default pin color
+      })
+    });
+
+    const hoverStyle = new ol.style.Style({
+      image: new ol.style.Icon({
+        anchor: [0.5, 1],
+        src: 'https://cdn-icons-png.flaticon.com/512/684/684908.png',
+        scale: 0.05,
+        color: 'red' // Hover pin color
+      })
+    });
+
+    // Popup
+    const popup = document.getElementById('popup');
+    const overlay = new ol.Overlay({
+      element: popup,
+      autoPan: true,
+      positioning: 'bottom-center',
+      stopEvent: true
+    });
+    map.addOverlay(overlay);
+
+    // Handle pin placement
+    let selectedFeature = null;
+    let pendingPin = null;
+    const modal = document.getElementById('postcard-modal');
+    const backdrop = document.getElementById('modal-backdrop');
+    const cancelBtn = document.getElementById('cancel-memory');
+    const saveBtn = document.getElementById('save-memory');
+
+    map.on('click', function (event) {
+        if (!selectedFeature) {
+            const coordinates = event.coordinate;
+            pendingPin = {
+                coordinates: coordinates
+            };
+            
+            // Show the modal
+            modal.style.display = 'block';
+            backdrop.style.display = 'block';
+            
+            // Set default date to today
+            document.getElementById('memory-date').valueAsDate = new Date();
+            return;
+        }
+
+        // Existing pin click handling code
+        const feature = selectedFeature;
+        const description = feature.get('description');
+        if (description) {
+            popup.innerHTML = description;
+            overlay.setPosition(feature.getGeometry().getCoordinates());
+            popup.style.display = 'block';
+        }
+    });
+
+    // Handle cancel button
+    cancelBtn.addEventListener('click', function() {
+        modal.style.display = 'none';
+        backdrop.style.display = 'none';
+        pendingPin = null;
+    });
+
+    // Handle save button
+    saveBtn.addEventListener('click', function() {
+        const date = document.getElementById('memory-date').value;
+        const text = document.getElementById('memory-text').value;
+        const imageFile = document.getElementById('memory-image').files[0];
+
+        if (!date || !text || !imageFile) {
+            alert('Please fill in all fields and upload an image.');
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const selectedDate = new Date(date + 'T00:00:00');
+            const formattedDate = selectedDate.toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                timeZone: 'UTC'
+            });
+
+            const description = `
+                <div class="postcard-content">
+                    <div class="postcard-image">
+                        <img src="${e.target.result}" alt="Memory Image">
+                    </div>
+                    <div class="postcard-text">
+                        <div class="postcard-date">📅 ${formattedDate}</div>
+                        <div class="postcard-message">${text}</div>
+                    </div>
+                </div>
+                <div class="postcard-stamp"></div>
+            `;
+
+            const pin = new ol.Feature({
+                geometry: new ol.geom.Point(pendingPin.coordinates),
+                description: description
+            });
+            
+            pin.setStyle(defaultStyle);
+            vectorSource.addFeature(pin);
+
+            // Clear form and hide modal
+            document.getElementById('memory-text').value = '';
+            imagePreview.innerHTML = '<span>Image Preview</span>';
+            imageInput.value = '';
+            modal.style.display = 'none';
+            backdrop.style.display = 'none';
+            pendingPin = null;
+        };
+        reader.readAsDataURL(imageFile);
+    });
+
+    // Close modal when clicking outside
+    backdrop.addEventListener('click', function() {
+        modal.style.display = 'none';
+        backdrop.style.display = 'none';
+        pendingPin = null;
+    });
+
+    // Hover effect
+    map.on('pointermove', function (event) {
+      map.getViewport().style.cursor = '';
+      popup.style.display = 'none';
+      overlay.setPosition(undefined);
+
+      const feature = map.forEachFeatureAtPixel(event.pixel, (feature) => feature);
+      if (feature) {
+        feature.setStyle(hoverStyle);
+        map.getViewport().style.cursor = 'pointer';
+        selectedFeature = feature;
+      } else {
+        vectorSource.getFeatures().forEach((feature) => feature.setStyle(defaultStyle));
+        selectedFeature = null;
+      }
+    });
+
+    // Add search functionality
+    const searchInput = document.getElementById('search-input');
+    const suggestionsContainer = document.getElementById('search-suggestions');
+    let debounceTimer;
+
+    searchInput.addEventListener('input', function() {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => {
+            const query = searchInput.value;
+            if (query.length >= 3) {
+                fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=10`)
+                    .then(response => response.json())
+                    .then(data => {
+                        suggestionsContainer.innerHTML = '';
+                        if (data.length > 0) {
+                            suggestionsContainer.style.display = 'block';
+                            data.forEach(result => {
+                                const div = document.createElement('div');
+                                div.className = 'suggestion-item';
+                                let displayText = result.display_name;
+                                if (result.type) {
+                                    displayText = `${result.display_name} (${result.type})`;
+                                }
+                                div.textContent = displayText;
+                                div.addEventListener('click', () => {
+                                    searchInput.value = result.display_name;
+                                    suggestionsContainer.style.display = 'none';
+                                    panToLocation(result);
+                                });
+                                suggestionsContainer.appendChild(div);
+                            });
+                        }
+                    });
+            } else {
+                suggestionsContainer.style.display = 'none';
+            }
+        }, 300);
+    });
+
+    // Hide suggestions when clicking outside
+    document.addEventListener('click', function(e) {
+        if (!searchInput.contains(e.target) && !suggestionsContainer.contains(e.target)) {
+            suggestionsContainer.style.display = 'none';
+        }
+    });
+
+    // Function to pan to location
+    function panToLocation(result) {
+        const coords = ol.proj.fromLonLat([parseFloat(result.lon), parseFloat(result.lat)]);
+        
+        // Adjusted zoom levels for better visibility
+        let zoomLevel = 11; // Increased default zoom level
+        
+        // Calculate zoom based on the type and importance of the location
+        if (result.type === 'country') {
+            zoomLevel = 5; // Increased from 4
+        } else if (result.type === 'state' || result.type === 'administrative') {
+            zoomLevel = 6; // Increased from 5
+        } else if (result.type === 'county') {
+            zoomLevel = 9; // Increased from 8
+        } else if (result.type === 'city') {
+            zoomLevel = 11; // Increased from 9
+        } else if (result.type === 'town') {
+            zoomLevel = 12; // Increased from 10
+        } else if (result.type === 'suburb' || result.type === 'neighbourhood') {
+            zoomLevel = 13; // Increased from 11
+        }
+
+        // If the result has a bounding box, use it to calculate the appropriate zoom
+        if (result.boundingbox) {
+            const bbox = result.boundingbox.map(coord => parseFloat(coord));
+            const minLon = bbox[2];
+            const maxLon = bbox[3];
+            const minLat = bbox[0];
+            const maxLat = bbox[1];
+            
+            // Convert the bounding box to the map's projection
+            const extent = ol.proj.transformExtent(
+                [minLon, minLat, maxLon, maxLat],
+                'EPSG:4326',
+                'EPSG:3857'
+            );
+            
+            // Fit the view to the extent with some padding and minimum zoom
+            map.getView().fit(extent, {
+                padding: [50, 50, 50, 50], // Reduced padding for closer zoom
+                duration: 1000,
+                minZoom: 3, // Prevent zooming out too far
+                maxZoom: zoomLevel + 1 // Allow slightly more zoom than before
+            });
+            return;
+        }
+
+        // If no bounding box, use the calculated zoom level
+        map.getView().animate({
+            center: coords,
+            zoom: zoomLevel,
+            duration: 1000
+        });
+
+        // Add a pin at the searched location
+        const searchPin = new ol.Feature({
+            geometry: new ol.geom.Point(coords),
+            description: result.display_name
+        });
+        searchPin.setStyle(defaultStyle);
+        vectorSource.addFeature(searchPin);
+    }
+
+    // Keep the Enter key functionality
+    searchInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            const query = searchInput.value;
+            
+            fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.length > 0) {
+                        suggestionsContainer.style.display = 'none';
+                        panToLocation(data[0]);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error searching location:', error);
+                    alert('Location not found. Please try again.');
+                });
+        }
+    });
+
+    // Image preview functionality
+    const imageInput = document.getElementById('memory-image');
+    const imagePreview = document.getElementById('image-preview');
+
+    imageInput.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                imagePreview.innerHTML = `<img src="${e.target.result}" alt="Preview">`;
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+
+    // Collection handling
+    const collectionButton = document.getElementById('open-collection');
+    const collectionModal = document.getElementById('collection-modal');
+    const closeCollection = document.getElementById('close-collection');
+    const collectionContent = document.getElementById('collection-content');
+
+    function updateCollection() {
+        const features = vectorSource.getFeatures();
+        collectionContent.innerHTML = '';
+
+        if (features.length === 0) {
+            collectionContent.innerHTML = `
+                <div class="no-memories">
+                    <h3>No memories yet</h3>
+                    <p>Click anywhere on the map to create your first memory!</p>
+                </div>
+            `;
+            return;
+        }
+
+        features.forEach((feature, index) => {
+            const description = feature.get('description');
+            const coordinates = feature.getGeometry().getCoordinates();
+            
+            // Create a temporary div to parse the HTML content
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = description;
+            
+            // Extract image source, date, and text
+            const img = tempDiv.querySelector('.postcard-image img');
+            const date = tempDiv.querySelector('.postcard-date').textContent;
+            const message = tempDiv.querySelector('.postcard-message').textContent;
+
+            const card = document.createElement('div');
+            card.className = 'collection-card';
+            card.innerHTML = `
+                <img src="${img.src}" alt="Memory" class="card-image">
+                <div class="card-info">
+                    <div class="card-date">${date}</div>
+                    <div class="card-preview">${message}</div>
+                </div>
+            `;
+
+            // Update the click handler
+            card.addEventListener('click', () => {
+                collectionModal.style.display = 'none';
+                backdrop.style.display = 'none'; // Hide backdrop when clicking a card
+                map.getView().animate({
+                    center: coordinates,
+                    zoom: 15,
+                    duration: 1000
+                });
+                
+                // Show the popup
+                popup.innerHTML = description;
+                overlay.setPosition(coordinates);
+                popup.style.display = 'block';
+            });
+
+            collectionContent.appendChild(card);
+        });
+    }
+
+    // Open collection
+    collectionButton.addEventListener('click', () => {
+        updateCollection();
+        collectionModal.style.display = 'block';
+        backdrop.style.display = 'block';
+    });
+
+    // Close collection
+    closeCollection.addEventListener('click', () => {
+        collectionModal.style.display = 'none';
+        backdrop.style.display = 'none';
+    });
+
+    // Update the existing backdrop click handler to also close the collection modal
+    backdrop.addEventListener('click', function() {
+        modal.style.display = 'none';
+        collectionModal.style.display = 'none';
+        backdrop.style.display = 'none';
+        pendingPin = null;
+    });
+
+    // Update the save button handler to refresh the collection
+    const originalSaveHandler = saveBtn.onclick;
+    saveBtn.onclick = function() {
+        // Call the original handler
+        originalSaveHandler.call(this);
+        // Update the collection
+        updateCollection();
+    };
+
+    // Instructions modal handling
+    const menuButton = document.getElementById('menu-button');
+    const instructionsModal = document.getElementById('instructions-modal');
+    const closeInstructions = document.getElementById('close-instructions');
+
+    menuButton.addEventListener('click', () => {
+        instructionsModal.style.display = 'flex';
+    });
+
+    closeInstructions.addEventListener('click', () => {
+        instructionsModal.style.display = 'none';
+    });
+
+    // Close instructions when clicking outside
+    instructionsModal.addEventListener('click', (e) => {
+        if (e.target === instructionsModal) {
+            instructionsModal.style.display = 'none';
+        }
+    });
+  </script>
+</body>
+</html>
